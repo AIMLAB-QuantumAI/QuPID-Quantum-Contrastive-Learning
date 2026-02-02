@@ -1,52 +1,91 @@
 # QuPID
 
-Quantum Parameter-efficient In-storage Data-dependent RAG for Medical Diagnostic Large Vision-Language Models
+**Quantum Parameter-efficient In-storage Data-dependent RAG for Medical Diagnostic Large Vision-Language Models**
+
+*KDD 2025*
 
 ## Overview
 
-QuPID is a hybrid quantum-classical retrieval framework that projects frozen vision transformer features into a quantum Hilbert space via parameterized quantum circuits, achieving superior pathological separability with only 30 trainable parameters.
+QuPID is a hybrid quantum-classical retrieval framework for medical retrieval-augmented generation (RAG). It projects frozen Vision Transformer (ViT) features into a quantum Hilbert space via parameterized quantum circuits (PQC), achieving superior pathological separability with only **30 trainable parameters**.
+
+### Key Features
+
+- **Extreme Parameter Efficiency**: 30 parameters vs. 500K+ for classical adapters
+- **Quantum Geometric Separation**: Leverages Fubini-Study metric in Hilbert space to separate overlapping pathological features
+- **Privacy-Preserving**: Enables in-storage, data-dependent adaptation on local hospital data without external transfer
+- **Classical Simulation**: No physical quantum hardware required
+
+## Architecture
+```
+Input Image → Frozen ViT-L/16 → 1024-D Features → Amplitude Embedding (10 qubits) → PQC (3 layers) → Quantum Fidelity Retrieval
+```
 
 ## Requirements
 ```bash
-pip install torch torchvision timm pennylane scikit-learn matplotlib pandas tqdm
-```
-
-## Dataset
-
-Download ChestX-ray14 from [NIH](https://nihcc.app.box.com/v/ChestXray-NIHCC) and organize as:
-```
-ChestXray14/
-├── images_001/images/*.png
-├── ...
-├── images_012/images/*.png
-├── Data_Entry_2017.csv
-├── train_val_list.txt
-└── test_list.txt
+pip install torch torchvision timm pennylane scikit-learn tqdm numpy
 ```
 
 ## Usage
-```bash
-python qupid_chestxray.py
+```python
+from models import ViTEncoder, QuantumEnhancer, QuPIDModel
+
+# Initialize models
+vit_encoder = ViTEncoder(
+    model_name='vit_large_patch16_224',
+    embedding_dim=1024,
+    freeze_backbone=True
+)
+quantum_enhancer = QuantumEnhancer(
+    input_dim=1024,
+    n_qubits=10,
+    n_qlayers=3
+)
+model = QuPIDModel(vit_encoder, quantum_enhancer)
+
+# Training
+from train import Trainer, CONFIG
+trainer = Trainer(CONFIG, device)
+trainer.train_stage1_vit(vit_encoder, train_loader, val_loader)
+trainer.train_stage2_quantum(quantum_enhancer, vit_encoder, train_loader, val_loader)
 ```
 
-## Configuration
+## Results
 
-Edit `CONFIG` dictionary in the script to modify:
-- `training_mode`: `'two_stage'` or `'end_to_end'`
-- `n_qubits`: Number of qubits (default: 10)
-- `n_qlayers`: Number of quantum layers (default: 3)
-- `temperature`: Contrastive loss temperature (default: 0.07)
+### Retrieval Performance (ChestX-ray14)
+
+| Method | P@5 | MAP@10 | # Params |
+|--------|-----|--------|----------|
+| ViT Only | 0.312 | 0.278 | 0 |
+| Classical Head | 0.378 | 0.341 | 1,051,136 |
+| Adapter Layers | 0.401 | 0.368 | 525,568 |
+| **QuPID** | **0.428** | **0.399** | **30** |
+
+### Embedding Quality
+
+| Metric | ViT Only | QuPID |
+|--------|----------|-------|
+| Intra-Cluster Distance ↓ | 0.684 | **0.576** |
+| Inter-Cluster Distance ↑ | 0.312 | **0.416** |
+| Silhouette Score ↑ | 0.182 | **0.273** |
+
+## Datasets
+
+Evaluated on four medical imaging benchmarks:
+- **ChestX-ray14**: 112,120 chest X-rays, 14 pathologies
+- **MURA**: 40,561 musculoskeletal radiographs, 14 categories
+- **IU X-Ray**: 7,470 chest X-rays with radiology reports
+- **MIMIC-CXR**: 377,110 chest X-rays with clinical reports
 
 ## Citation
 ```bibtex
 @inproceedings{qupid2025,
   title={QuPID: Quantum Parameter-Efficient In-Storage Data-Dependent RAG for Medical Diagnostic Large Vision-Language Models},
-  author={...},
-  booktitle={KDD},
+  author={Ahn, Hyojun and Roh, Emily Jimin and Park, Soohyun and Saad, Walid and Lee, Hyung-Chul and Kim, Joongheon},
+  booktitle={Proceedings of the 32nd ACM SIGKDD Conference on Knowledge Discovery and Data Mining},
   year={2025}
 }
 ```
 
-## License
+## Acknowledgments
 
-MIT License
+This research was supported by MSIT, Korea (IITP-2026-RS-2024-00436887, RS-2024-00439803).
