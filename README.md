@@ -2,8 +2,6 @@
 
 **Quantum Parameter-efficient In-storage Data-dependent RAG for Medical Diagnostic Large Vision-Language Models**
 
-*KDD 2025*
-
 ## Overview
 
 QuPID is a hybrid quantum-classical retrieval framework for medical retrieval-augmented generation (RAG). It projects frozen Vision Transformer (ViT) features into a quantum Hilbert space via parameterized quantum circuits (PQC), achieving superior pathological separability with only **30 trainable parameters**.
